@@ -87,6 +87,16 @@ jobs:
       - name: Terraform init
         run: terraform init -input=false -reconfigure -backend-config="bucket=$TF_STATE_BUCKET" -backend-config="key=sandbox/terraform.tfstate" -backend-config="region=$AWS_REGION" -backend-config="dynamodb_table=$TF_LOCK_TABLE" -backend-config="encrypt=true"
 
+      # One-time migration for AWS Academy: an earlier aws_s3_bucket resource
+      # cannot be refreshed because the lab SCP denies the provider's automatic
+      # GetBucketObjectLockConfiguration call. Forget only its state record;
+      # terraform_data below adopts the already-existing bucket through the CLI.
+      - name: Migrate restricted S3 state
+        run: |
+          if terraform state list | grep -qx 'module.s3.aws_s3_bucket.uploads'; then
+            terraform state rm 'module.s3.aws_s3_bucket.uploads'
+          fi
+
       - name: Terraform validate
         run: terraform validate
 
