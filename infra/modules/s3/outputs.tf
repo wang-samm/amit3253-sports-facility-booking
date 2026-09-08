@@ -1,11 +1,11 @@
 output "bucket_id" {
-  value = aws_s3_bucket.uploads.id
+  value = terraform_data.uploads.output
 }
 
 output "bucket_arn" {
-  value = aws_s3_bucket.uploads.arn
+  value = "arn:aws:s3:::${terraform_data.uploads.output}"
 }
 
 output "bucket_regional_domain_name" {
-  value = aws_s3_bucket.uploads.bucket_regional_domain_name
+  value = "${terraform_data.uploads.output}.s3.us-east-1.amazonaws.com"
 }
