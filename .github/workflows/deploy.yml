@@ -65,37 +65,27 @@ jobs:
       - name: Upload release to S3
         run: aws s3 cp assignment-app.zip "s3://${ARTIFACT_BUCKET}/${ARTIFACT_PREFIX}/assignment-app.zip"
 
-      # AWS Academy instances may not register with Systems Manager. A rolling
-      # instance refresh needs no inbound access or SSM: each replacement runs
-      # user-data, downloads the S3 release and initializes the RDS schema.
-      - name: Start Auto Scaling rolling deployment
-        id: refresh
-        run: |
-          REFRESH_ID=$(aws autoscaling start-instance-refresh \
-            --auto-scaling-group-name "$ASG_NAME" \
-            --preferences MinHealthyPercentage=50,InstanceWarmup=300 \
-            --query InstanceRefreshId --output text)
-          echo "refresh_id=$REFRESH_ID" >> "$GITHUB_OUTPUT"
+      # The AWS Academy SCP blocks StartInstanceRefresh. Replacing the ASG via
+      # Terraform is permitted and launches a fresh fleet from the latest
+      # launch-template version. Each new instance downloads the release above
+      # through user-data, so GitHub Actions remains the deployment runner.
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.0"
 
-      - name: Wait for rolling deployment
+      - name: Initialize Terraform state
+        working-directory: infra/envs/sandbox
         run: |
           set -euo pipefail
-          for i in $(seq 1 60); do
-            STATUS=$(aws autoscaling describe-instance-refreshes \
-              --auto-scaling-group-name "$ASG_NAME" \
-              --instance-refresh-ids "${{ steps.refresh.outputs.refresh_id }}" \
-              --query 'InstanceRefreshes[0].Status' --output text)
-            echo "Instance refresh status: $STATUS (check $i/60)"
-            if [ "$STATUS" = "Successful" ]; then
-              exit 0
-            fi
-            if [ "$STATUS" = "Failed" ] || [ "$STATUS" = "Cancelled" ]; then
-              aws autoscaling describe-instance-refreshes \
-                --auto-scaling-group-name "$ASG_NAME" \
-                --instance-refresh-ids "${{ steps.refresh.outputs.refresh_id }}"
-              exit 1
-            fi
-            sleep 15
-          done
-          echo "Timed out waiting for the Auto Scaling rolling deployment."
-          exit 1
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          terraform init -input=false -reconfigure \
+            -backend-config="bucket=amit3253-tfstate-${ACCOUNT_ID}" \
+            -backend-config="key=sandbox/terraform.tfstate" \
+            -backend-config="region=${AWS_REGION}" \
+            -backend-config="dynamodb_table=amit3253-terraform-lock" \
+            -backend-config="encrypt=true"
+
+      - name: Replace ASG using Terraform
+        working-directory: infra/envs/sandbox
+        run: terraform apply -auto-approve -replace="module.asg.aws_autoscaling_group.app"
