@@ -187,3 +187,45 @@ resource "aws_vpc_endpoint" "s3" {
     Name = "${var.name_prefix}-s3-endpoint"
   }
 }
+
+# Private access to Secrets Manager is required during EC2 boot. Some AWS
+# Academy environments do not allow reliable HTTPS access from private
+# subnets through the NAT gateway, so this interface endpoint keeps the
+# credentials request entirely inside the VPC.
+resource "aws_security_group" "secrets_endpoint" {
+  name        = "${var.name_prefix}-sg-secrets-endpoint"
+  description = "Allow HTTPS from resources inside the VPC to Secrets Manager"
+  vpc_id      = aws_vpc.this.id
+
+  ingress {
+    description = "HTTPS from VPC"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.name_prefix}-sg-secrets-endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "secretsmanager" {
+  vpc_id              = aws_vpc.this.id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.secretsmanager"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = aws_subnet.private[*].id
+  security_group_ids  = [aws_security_group.secrets_endpoint.id]
+
+  tags = {
+    Name = "${var.name_prefix}-secretsmanager-endpoint"
+  }
+}
