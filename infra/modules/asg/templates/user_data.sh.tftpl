@@ -46,19 +46,17 @@ if aws s3api head-object --bucket "${artifact_bucket}" --key "${artifact_key}" -
     mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASS" < /var/www/html/schema.sql || true
   fi
 
-  # Keep the coursework demonstration administrator deterministic even when
-  # an earlier partial seed left an old or mismatched account in the database.
-  # The bcrypt value below represents the documented demo password: password.
-  mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASS" -D "$DB_NAME" <<'SQL'
-INSERT INTO users
-  (name, email, password_hash, id_number, faculty, date_of_birth, is_admin)
-VALUES
-  ('System Administrator', 'admin@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'ADMIN001', 'Faculty of Computing and Information Technology', '2000-01-01', 1)
-ON DUPLICATE KEY UPDATE
-  name = VALUES(name),
-  password_hash = VALUES(password_hash),
-  is_admin = 1;
-SQL
+  # Generate the demonstration password hash with the exact PHP runtime used
+  # by this EC2 image. This avoids incompatibilities with a pre-generated hash
+  # while keeping password verification inside PHP's password API.
+  DEMO_HASH=$(php -r 'echo password_hash("password", PASSWORD_DEFAULT);')
+  mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASS" -D "$DB_NAME" -e \
+    "INSERT INTO users (name,email,password_hash,id_number,faculty,date_of_birth,is_admin)
+       VALUES ('System Administrator','admin@example.com','$DEMO_HASH','ADMIN001','Faculty of Computing and Information Technology','2000-01-01',1)
+       ON DUPLICATE KEY UPDATE password_hash=VALUES(password_hash),is_admin=1;
+     INSERT INTO users (name,email,password_hash,id_number,faculty,date_of_birth,is_admin)
+       VALUES ('Demo Student','student@example.com','$DEMO_HASH','24WMR00001','Faculty of Computing and Information Technology','2004-01-01',0)
+       ON DUPLICATE KEY UPDATE password_hash=VALUES(password_hash),is_admin=0;"
 else
   echo "<?php http_response_code(200); echo 'assignment-sports-booking: bootstrapped, waiting for first deploy.';" \
     > /var/www/html/index.php
