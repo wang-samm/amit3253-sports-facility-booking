@@ -1,5 +1,6 @@
 #!/bin/bash
-set -euxo pipefail
+# Do not enable shell tracing here: this script handles database credentials.
+set -euo pipefail
 
 dnf update -y
 dnf install -y httpd php php-mysqlnd php-cli jq unzip mariadb105
@@ -44,6 +45,20 @@ if aws s3api head-object --bucket "${artifact_bucket}" --key "${artifact_key}" -
   if [ "$TABLE_EXISTS" -eq 0 ]; then
     mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASS" < /var/www/html/schema.sql || true
   fi
+
+  # Keep the coursework demonstration administrator deterministic even when
+  # an earlier partial seed left an old or mismatched account in the database.
+  # The bcrypt value below represents the documented demo password: password.
+  mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASS" -D "$DB_NAME" <<'SQL'
+INSERT INTO users
+  (name, email, password_hash, id_number, faculty, date_of_birth, is_admin)
+VALUES
+  ('System Administrator', 'admin@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'ADMIN001', 'Faculty of Computing and Information Technology', '2000-01-01', 1)
+ON DUPLICATE KEY UPDATE
+  name = VALUES(name),
+  password_hash = VALUES(password_hash),
+  is_admin = 1;
+SQL
 else
   echo "<?php http_response_code(200); echo 'assignment-sports-booking: bootstrapped, waiting for first deploy.';" \
     > /var/www/html/index.php
