@@ -9,12 +9,45 @@ $profileError = '';
 $profileSuccess = '';
 $passwordError = '';
 $passwordSuccess = '';
+$photoError = '';
+$photoSuccess = '';
+$_SESSION['photo_csrf'] ??= bin2hex(random_bytes(32));
 
-$stmt = $conn->prepare('SELECT name, email, id_number, faculty, date_of_birth FROM users WHERE id = ?');
+$stmt = $conn->prepare('SELECT name, email, id_number, faculty, date_of_birth, profile_image_url FROM users WHERE id = ?');
 $stmt->bind_param('i', $uid);
 $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();
 $stmt->close();
+if (!$user) {
+    http_response_code(403);
+    exit('Account not found.');
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form'] ?? '') === 'photo') {
+    if (!hash_equals($_SESSION['photo_csrf'], (string) ($_POST['csrf'] ?? ''))) {
+        $photoError = 'Please refresh the page and try again.';
+    } elseif (empty($_FILES['photo']) || $_FILES['photo']['error'] === UPLOAD_ERR_NO_FILE) {
+        $photoError = 'Choose a photo to upload.';
+    } else {
+        [$newPhoto, $uploadError] = handle_image_upload($_FILES['photo'], __DIR__ . '/uploads', 'profile');
+        if ($uploadError) {
+            $photoError = $uploadError;
+        } else {
+            $stmt = $conn->prepare('UPDATE users SET profile_image_url = ? WHERE id = ?');
+            $stmt->bind_param('si', $newPhoto, $uid);
+            if ($stmt->execute()) {
+                $previous = $user['profile_image_url'];
+                $user['profile_image_url'] = $newPhoto;
+                if ($previous) delete_image_file($previous, __DIR__ . '/uploads');
+                $photoSuccess = 'Profile photo updated.';
+            } else {
+                delete_image_file($newPhoto, __DIR__ . '/uploads');
+                $photoError = 'Could not save your profile photo.';
+            }
+            $stmt->close();
+        }
+    }
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form'] ?? '') === 'profile') {
     $name          = trim($_POST['name'] ?? '');
@@ -71,6 +104,21 @@ require 'partials/header.php';
 <div class="page-header">
 <h1>My Account</h1>
 <p>Manage your profile and password.</p>
+<?php if (current_user_is_admin()): ?><p><a href="admin/users.php">Back to Admin</a></p><?php endif; ?>
+</div>
+
+<div class="form-card" style="margin-bottom:24px;">
+<h2>Profile Photo</h2>
+<?php if ($user['profile_image_url']): ?><p><img class="profile-photo" src="<?= htmlspecialchars(entity_image_url(['image_url' => $user['profile_image_url']])) ?>" alt="Your current profile photo"></p><?php else: ?><p>No profile photo yet.</p><?php endif; ?>
+<?php if ($photoError): ?><p class="alert alert-error"><?= htmlspecialchars($photoError) ?></p><?php endif; ?>
+<?php if ($photoSuccess): ?><p class="alert alert-success"><?= htmlspecialchars($photoSuccess) ?></p><?php endif; ?>
+<form method="post" enctype="multipart/form-data">
+<input type="hidden" name="form" value="photo">
+<input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['photo_csrf']) ?>">
+<label>Upload or replace photo <input type="file" name="photo" accept="image/jpeg,image/png,image/gif,image/webp" required></label>
+<p>JPG, PNG, GIF or WebP, up to 5 MB.</p>
+<button type="submit">Save Photo</button>
+</form>
 </div>
 
 <div class="form-card" style="margin-bottom:24px;">

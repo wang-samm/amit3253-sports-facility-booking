@@ -1,5 +1,6 @@
 <?php
 $loggedIn = current_user_id() !== null;
+$navPhoto = $loggedIn ? current_profile_photo($conn) : null;
 $currentPage = basename($_SERVER['PHP_SELF']);
 function nav_active($page, $current) {
     return $page === $current ? ' active' : '';
@@ -36,7 +37,7 @@ function nav_active($page, $current) {
 <?php if ($loggedIn): ?>
 <div class="user-menu">
 <button type="button" class="nav-user user-menu-trigger" aria-haspopup="true" aria-expanded="false">
-<span class="user-avatar"><?= htmlspecialchars(mb_strtoupper(mb_substr(current_user_name(), 0, 1))) ?></span> Hi, <?= htmlspecialchars(current_user_name()) ?>
+<?php if ($navPhoto): ?><img class="user-avatar" src="<?= htmlspecialchars($navPhoto) ?>" alt="My profile photo"><?php else: ?><span class="user-avatar" aria-hidden="true">&#128100;</span><?php endif; ?> Hi, <?= htmlspecialchars(current_user_name()) ?>
 </button>
 <div class="user-menu-dropdown">
 <a href="account.php">My Account</a>

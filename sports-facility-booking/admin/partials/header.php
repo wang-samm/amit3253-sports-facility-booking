@@ -1,4 +1,4 @@
-<?php $currentPage = basename($_SERVER['PHP_SELF']); ?>
+<?php $currentPage = basename($_SERVER['PHP_SELF']); $navPhoto = current_profile_photo($conn); ?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -27,6 +27,7 @@
 <a href="testimonials.php" class="<?= $currentPage === 'testimonials.php' ? 'active' : '' ?>">Testimonials</a>
 <a href="messages.php" class="<?= $currentPage === 'messages.php' ? 'active' : '' ?>">Messages</a>
 <a href="users.php" class="<?= $currentPage === 'users.php' ? 'active' : '' ?>">Users</a>
+<a href="../account.php" class="admin-account-link"><?php if ($navPhoto): ?><img class="user-avatar" src="<?= htmlspecialchars($navPhoto) ?>" alt="My profile photo"><?php else: ?><span class="user-avatar" aria-hidden="true">&#128100;</span><?php endif; ?> My Profile</a>
 <a href="../logout.php">Logout</a>
 <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark mode">&#9728;</button>
 </div>

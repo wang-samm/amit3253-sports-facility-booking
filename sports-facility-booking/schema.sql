@@ -5,6 +5,7 @@ CREATE TABLE users (
   id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(100) NOT NULL,
   email VARCHAR(190) NOT NULL UNIQUE, password_hash VARCHAR(255) NOT NULL,
   id_number VARCHAR(30), faculty VARCHAR(160), date_of_birth DATE,
+  profile_image_url VARCHAR(500) NULL,
   is_admin TINYINT(1) NOT NULL DEFAULT 0,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
@@ -55,6 +56,8 @@ CREATE TABLE testimonials (
   id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, facility_id INT NOT NULL,
   comment TEXT NOT NULL, rating TINYINT NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  admin_reply TEXT NULL, admin_reply_name VARCHAR(100) NULL,
+  admin_replied_at TIMESTAMP NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (facility_id) REFERENCES facilities(id) ON DELETE CASCADE,
   CONSTRAINT chk_rating CHECK (rating BETWEEN 1 AND 5)
