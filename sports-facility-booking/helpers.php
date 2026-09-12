@@ -55,6 +55,21 @@ function entity_image_url($row) {
         return $prefix . $relative . $version;
     }
 
+        $defaultPhotos = [
+        'Badminton' => 'badminton.jpg',
+        'Basketball' => 'basketball.jpg',
+        'Futsal' => 'futsal.jpg',
+        'Swimming Pool' => 'swimming.jpg',
+        'Table Tennis' => 'table-tennis.jpg',
+        'Tennis' => 'tennis.jpg',
+    ];
+
+    $photoName = $defaultPhotos[$row['facility_name'] ?? ''] ?? null;
+    if ($photoName !== null) {
+        $prefix = str_contains($_SERVER['SCRIPT_NAME'] ?? '', '/admin/') ? '../' : '';
+        return $prefix . 'assets/facilities/' . $photoName;
+    }
+    
     $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300">'
          . '<rect width="100%" height="100%" fill="#e6e1ea"/>'
          . '<text x="50%" y="50%" font-size="18" fill="#6b6470" text-anchor="middle" dy=".3em">No photo yet</text>'
