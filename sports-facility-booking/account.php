@@ -1,8 +1,13 @@
 <?php
-require 'config.php';
-require 'auth.php';
-require 'helpers.php';
-require_login();
+require __DIR__ . '/config.php';
+require __DIR__ . '/auth.php';
+require __DIR__ . '/helpers.php';
+$adminView = str_contains($_SERVER['SCRIPT_NAME'] ?? '', '/admin/');
+if ($adminView) {
+    require_admin();
+} else {
+    require_login();
+}
 
 $uid = current_user_id();
 $profileError = '';
@@ -99,12 +104,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form'] ?? '') === 'passwor
 }
 
 $pageTitle = 'My Account';
-require 'partials/header.php';
+$headerPath = $adminView ? __DIR__ . '/admin/partials/header.php' : __DIR__ . '/partials/header.php';
+require $headerPath;
 ?>
 <div class="page-header">
 <h1>My Account</h1>
 <p>Manage your profile and password.</p>
-<?php if (current_user_is_admin()): ?><p><a href="admin/users.php">Back to Admin</a></p><?php endif; ?>
+<?php if (!$adminView && current_user_is_admin()): ?><p><a href="admin/users.php">Back to Admin</a></p><?php endif; ?>
 </div>
 
 <div class="form-card" style="margin-bottom:24px;">
@@ -170,4 +176,7 @@ require 'partials/header.php';
 <button type="submit">Change Password</button>
 </form>
 </div>
-<?php require 'partials/footer.php'; ?>
+<?php
+$footerPath = $adminView ? __DIR__ . '/admin/partials/footer.php' : __DIR__ . '/partials/footer.php';
+require $footerPath;
+?>
