@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="../style.css?v=<?= @filemtime(__DIR__ . '/../../style.css') ?>">
 </head>
 <body>
-<nav class="navbar">
+<nav class="navbar admin-navbar">
 <a class="brand" href="facilities.php"><img src="../assets/tarumt-logo.png" alt="TAR UMT" class="brand-logo">Admin &middot; Sports Booking</a>
 <div class="nav-links">
 <a href="facilities.php" class="<?= in_array($currentPage, ['facilities.php','facility_create.php','facility_edit.php']) ? 'active' : '' ?>">Facilities</a>

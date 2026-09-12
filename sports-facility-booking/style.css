@@ -164,6 +164,13 @@ body {
   object-fit: cover;
 }
 .admin-account-link { display: inline-flex; align-items: center; gap: 6px; }
+/* Keep the admin navigation beside the logo on every admin page. If the
+   viewport is too narrow, scroll the menu within the top bar. */
+.admin-navbar { flex-wrap: nowrap; gap: 12px; padding-inline: 20px; }
+.admin-navbar .brand { flex: 0 0 auto; white-space: nowrap; font-size: 1rem; }
+.admin-navbar .nav-links { min-width: 0; flex: 0 1 auto; overflow-x: auto; white-space: nowrap; scrollbar-width: thin; }
+.admin-navbar .nav-links a { flex-shrink: 0; padding-inline: 9px; white-space: nowrap; }
+.admin-navbar .theme-toggle { flex-shrink: 0; }
 .profile-photo { width: 112px; height: 112px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); }
 .user-detail-photo { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; }
 .admin-reply { margin: 14px 0 0; padding: 12px 16px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: var(--radius-sm); }
