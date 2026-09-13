@@ -50,6 +50,7 @@ Demo accounts (change before final presentation):
 - Public/private Network ACLs
 - Secrets Manager for generated database credentials
 - Private S3 bucket for application releases and facility photos
+- CloudWatch operational alarms delivered through an SNS email topic
 
 ## GitHub Actions
 
@@ -71,7 +72,9 @@ Demo accounts (change before final presentation):
    - `AWS_ACCESS_KEY_ID`
    - `AWS_SECRET_ACCESS_KEY`
    - `AWS_SESSION_TOKEN`
-7. Refresh all three secrets whenever the Academy session credentials expire.
+   - `ALERT_EMAIL` (the administrator email that should receive CloudWatch alerts)
+7. Refresh the three AWS credential secrets whenever the Academy session credentials expire. `ALERT_EMAIL` does not expire.
+8. After deployment, open the email sent by AWS Notifications and click **Confirm subscription**. Until it is confirmed, SNS cannot deliver CloudWatch alerts.
 
 Never place credentials in `.tf`, `.tfvars`, PHP files, commits, screenshots or reports.
 
@@ -81,9 +84,10 @@ Never place credentials in `.tf`, `.tfvars`, PHP files, commits, screenshots or 
 2. Choose `plan`. Check that Terraform proposes the expected resources.
 3. Run the same workflow again with `deploy`.
 4. Wait for infrastructure creation and application deployment to finish.
-5. Run **Actions -> DB - Seed Database (one-time)** once.
-6. In the successful infrastructure workflow output, obtain `alb_dns_name`, or open AWS EC2 -> Load Balancers and copy the ALB DNS name.
-7. Browse to `http://<alb-dns-name>`.
+5. Confirm the new SNS email subscription if it is not already confirmed.
+6. Run **Actions -> DB - Seed Database (one-time)** once.
+7. In the successful infrastructure workflow output, obtain `alb_dns_name`, or open AWS EC2 -> Load Balancers and copy the ALB DNS name.
+8. Browse to `http://<alb-dns-name>`.
 
 The first workflow run automatically creates an encrypted, versioned S3 Terraform-state bucket and DynamoDB locking table. These backend resources are intentionally retained after `destroy` so later deployments keep state history.
 
@@ -111,4 +115,3 @@ After screenshots and demonstrations, run `CI - Full Pipeline` with `destroy`. T
 - CloudWatch metrics: CPU, request count, response time, healthy hosts
 - AWS Pricing Calculator export for 12 months in `us-east-1`
 - Successful `terraform destroy` after testing
-

@@ -19,3 +19,7 @@ output "secret_arn" {
 output "asg_name" {
   value = module.asg.asg_name
 }
+
+output "alert_topic_arn" {
+  value = module.monitoring.sns_topic_arn
+}

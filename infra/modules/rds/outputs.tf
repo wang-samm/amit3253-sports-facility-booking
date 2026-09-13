@@ -9,3 +9,7 @@ output "db_address" {
 output "db_port" {
   value = aws_db_instance.this.port
 }
+
+output "db_identifier" {
+  value = aws_db_instance.this.identifier
+}

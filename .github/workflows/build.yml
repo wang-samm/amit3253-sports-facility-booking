@@ -30,6 +30,10 @@ on:
 env:
   AWS_REGION: us-east-1
   TF_WORKING_DIR: infra/envs/sandbox
+  # Optional: create the ALERT_EMAIL repository secret to subscribe that
+  # address to operational alerts. A missing secret becomes an empty string,
+  # so plans and deployments still work without an email subscription.
+  TF_VAR_alert_email: ${{ secrets.ALERT_EMAIL }}
 
 jobs:
   terraform:

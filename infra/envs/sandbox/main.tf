@@ -87,3 +87,14 @@ module "asg" {
   artifact_bucket       = module.s3.bucket_id
   artifact_key          = var.artifact_key
 }
+
+module "monitoring" {
+  source = "../../modules/monitoring"
+
+  name_prefix            = var.name_prefix
+  alert_email            = var.alert_email
+  asg_name               = module.asg.asg_name
+  alb_arn_suffix          = module.alb.alb_arn_suffix
+  target_group_arn_suffix = module.alb.target_group_arn_suffix
+  db_identifier           = module.rds.db_identifier
+}

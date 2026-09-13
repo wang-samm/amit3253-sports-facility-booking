@@ -91,3 +91,14 @@ variable "asg_desired_capacity" {
   type    = number
   default = 2
 }
+
+variable "alert_email" {
+  description = "Email address subscribed to operational alerts. Leave blank to create alarms without an email subscription."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.alert_email == "" || can(regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", var.alert_email))
+    error_message = "alert_email must be blank or a valid email address."
+  }
+}
